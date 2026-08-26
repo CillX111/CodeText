@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Codetext — Text verschlüsseln</title>
+<style>
+  :root{
+    --ink: #dceaf7;
+    --paper-dark: #142235;
+    --paper-darker: #0b1420;
+    --gold: #5eb3ea;
+    --gold-dim: #3d6f97;
+    --rust: #2f6fd6;
+    --line: #24384f;
+    --mono: 'JetBrains Mono', 'Courier New', monospace;
+    --serif: 'Georgia', 'Iowan Old Style', serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background: var(--paper-darker);
+    background-image:
+      radial-gradient(circle at 15% 10%, rgba(94,179,234,0.08), transparent 40%),
+      radial-gradient(circle at 85% 90%, rgba(47,111,214,0.08), transparent 45%);
+    color: var(--ink);
+    font-family: var(--serif);
+    min-height: 100vh;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding: 48px 20px 80px;
+  }
+
+  .eyebrow{
+    font-family: var(--mono);
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    font-size: 11px;
+    color: var(--gold-dim);
+    margin-bottom: 14px;
+  }
+
+  h1{
+    font-size: clamp(32px, 5vw, 48px);
+    font-weight: 400;
+    margin: 0 0 6px;
+    letter-spacing: 0.01em;
+  }
+  h1 em{
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .sub{
+    font-family: var(--mono);
+    font-size: 13px;
+    color: #9aa8a2;
+    max-width: 480px;
+    text-align: center;
+    line-height: 1.6;
+    margin-bottom: 40px;
+  }
+
+  .card{
+    width: 100%;
+    max-width: 640px;
+    background: linear-gradient(180deg, var(--paper-dark), #0f1c2c);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 36px;
+    position: relative;
+    box-shadow: 0 30px 60px -30px rgba(0,0,0,0.7);
+  }
+  .card::before{
+    content:"";
+    position:absolute;
+    top:0; left:0; right:0; height:2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    opacity:0.6;
+  }
+
+  .mode-switch{
+    display:flex;
+    gap: 2px;
+    background: var(--paper-darker);
+    border: 1px solid var(--line);
+    border-radius: 3px;
+    padding: 3px;
+    margin-bottom: 28px;
+  }
+  .mode-switch button{
+    flex:1;
+    background: transparent;
+    border: none;
+    color: #7c8b85;
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    padding: 10px 12px;
+    cursor: pointer;
+    border-radius: 2px;
+    transition: all 0.2s ease;
+  }
+  .mode-switch button.active{
+    background: var(--gold);
+    color: #0b1420;
+    font-weight: 600;
+  }
+
+  label{
+    display:block;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-bottom: 8px;
+  }
+
+  .label-row{
+    display:flex;
+    align-items:center;
+    justify-content: space-between;
+    margin-bottom: 8px;
+  }
+  .label-row label{ margin-bottom: 0; }
+  .eye-btn{
+    background: transparent;
+    border: 1px solid var(--line);
+    color: #7c8b95;
+    padding: 5px 8px;
+    border-radius: 3px;
+    cursor: pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    transition: color 0.2s ease, border-color 0.2s ease;
+  }
+  .eye-btn:hover{ color: var(--gold); border-color: var(--gold-dim); }
+  .eye-btn.active{ color: var(--gold); border-color: var(--gold-dim); }
+
+  textarea.masked{
+    -webkit-text-security: disc;
+    text-security: disc;
+  }
+
+  textarea, input[type="password"], input[type="text"]{
+    width: 100%;
+    background: var(--paper-darker);
+    border: 1px solid var(--line);
+    color: var(--ink);
+    font-family: var(--mono);
+    font-size: 14px;
+    padding: 14px;
+    border-radius: 3px;
+    resize: vertical;
+    line-height: 1.5;
+  }
+  textarea:focus, input:focus{
+    outline: none;
+    border-color: var(--gold-dim);
+  }
+  textarea{ min-height: 120px; margin-bottom: 22px; }
+
+  .field{ margin-bottom: 22px; }
+
+  .pw-row{
+    display:flex;
+    gap: 10px;
+  }
+  .pw-row input{ flex:1; }
+  .pw-toggle{
+    background: var(--paper-darker);
+    border: 1px solid var(--line);
+    color: #9aa8a2;
+    font-family: var(--mono);
+    font-size: 11px;
+    padding: 0 14px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .pw-toggle:hover{ color: var(--gold); border-color: var(--gold-dim); }
+
+  .run-btn{
+    width: 100%;
+    background: var(--rust);
+    color: #f4ede0;
+    border: none;
+    font-family: var(--mono);
+    font-size: 13px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    padding: 15px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.05s ease;
+    margin-top: 4px;
+  }
+  .run-btn:hover{ background: #4a86e0; }
+  .run-btn:active{ transform: translateY(1px); }
+
+  .result{
+    margin-top: 26px;
+    display:none;
+  }
+  .result.show{ display:block; }
+  .result-box{
+    background: var(--paper-darker);
+    border: 1px dashed var(--line);
+    border-radius: 3px;
+    padding: 14px;
+    font-family: var(--mono);
+    font-size: 13px;
+    word-break: break-all;
+    color: var(--gold);
+    max-height: 180px;
+    overflow-y: auto;
+  }
+  .result-actions{
+    display:flex;
+    gap: 10px;
+    margin-top: 10px;
+  }
+  .copy-btn{
+    background: transparent;
+    border: 1px solid var(--line);
+    color: #9aa8a2;
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    padding: 8px 14px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .copy-btn:hover{ color: var(--gold); border-color: var(--gold-dim); }
+
+  .note{
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #6b7a75;
+    margin-top: 10px;
+    line-height: 1.6;
+  }
+  .note.error{ color: #e0685c; }
+
+  .footer-line{
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    color: #4a5852;
+    margin-top: 36px;
+    text-align: center;
+    max-width: 480px;
+    line-height: 1.8;
+  }
+
+  ::selection{ background: var(--gold); color: #0b1420; }
+</style>
+</head>
+<body>
+
+  <div class="eyebrow">AES · 256 · GCM</div>
+  <h1>Code<em>text</em></h1>
+  <div class="sub">
+    Verschlüsselt deinen Text mit einem Passwort deiner Wahl. Ohne dieses Passwort ist der Inhalt praktisch nicht zu knacken — nicht einmal von dieser Seite selbst, denn sie merkt sich nichts.
+  </div>
+
+  <div class="card">
+    <div class="mode-switch">
+      <button id="btn-enc" class="active" onclick="setMode('enc')">Verschlüsseln</button>
+      <button id="btn-dec" onclick="setMode('dec')">Entschlüsseln</button>
+    </div>
+
+    <div class="field">
+      <div class="label-row">
+        <label id="text-label">Klartext</label>
+        <button type="button" class="eye-btn" id="input-eye" onclick="toggleInputMask()" aria-label="Anzeigen/Verbergen">
+          <svg id="input-eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        </button>
+      </div>
+      <textarea id="input-text" class="masked" placeholder="Gib hier deinen Text ein …"></textarea>
+    </div>
+
+    <div class="field">
+      <label>Passwort</label>
+      <div class="pw-row">
+        <input type="password" id="password" placeholder="Wähle ein starkes Passwort">
+        <button class="pw-toggle" onclick="togglePw()">Zeigen</button>
+      </div>
+    </div>
+
+    <button class="run-btn" id="run-btn" onclick="run()">Verschlüsseln →</button>
+
+    <div class="result" id="result">
+      <div class="label-row">
+        <label>Ergebnis</label>
+        <button type="button" class="eye-btn" id="output-eye" onclick="toggleOutputMask()" aria-label="Anzeigen/Verbergen">
+          <svg id="output-eye-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-7 11-7 11 7 11 7-4 7-11 7-11-7-11-7z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+        </button>
+      </div>
+      <div class="result-box" id="output"></div>
+      <div class="note" id="note"></div>
+    </div>
+  </div>
+
+  <div class="footer-line">
+    Läuft vollständig im Browser · Web Crypto API · PBKDF2 (200.000 Runden) + AES-GCM<br>
+    Kein Server, keine Speicherung, kein Tracking.<br>
+    Passwort verlieren = Text unwiederbringlich verloren.
+  </div>
+
+<script>
+let mode = 'enc';
+let outputRealText = '';
+let outputVisible = false;
+
+function toggleInputMask(){
+  const el = document.getElementById('input-text');
+  const btn = document.getElementById('input-eye');
+  el.classList.toggle('masked');
+  btn.classList.toggle('active', !el.classList.contains('masked'));
+}
+
+function toggleOutputMask(){
+  outputVisible = !outputVisible;
+  const btn = document.getElementById('output-eye');
+  btn.classList.toggle('active', outputVisible);
+  renderOutput();
+}
+
+function renderOutput(){
+  const output = document.getElementById('output');
+  if(!outputRealText){ output.textContent = ''; return; }
+  output.textContent = outputVisible ? outputRealText : '•'.repeat(Math.min(outputRealText.length, 400));
+}
+
+function setMode(m){
+  mode = m;
+  document.getElementById('btn-enc').classList.toggle('active', m==='enc');
+  document.getElementById('btn-dec').classList.toggle('active', m==='dec');
+  document.getElementById('text-label').textContent = m==='enc' ? 'Klartext' : 'Verschlüsselter Text (Base64)';
+  document.getElementById('input-text').placeholder = m==='enc' ? 'Gib hier deinen Text ein …' : 'Füge hier den verschlüsselten Text ein …';
+  document.getElementById('run-btn').textContent = m==='enc' ? 'Verschlüsseln →' : 'Entschlüsseln →';
+  outputRealText = '';
+  document.getElementById('result').classList.remove('show');
+}
+
+function togglePw(){
+  const pw = document.getElementById('password');
+  const btn = event.target;
+  if(pw.type === 'password'){ pw.type = 'text'; btn.textContent = 'Verbergen'; }
+  else { pw.type = 'password'; btn.textContent = 'Zeigen'; }
+}
+
+function bufToBase64(buf){
+  const bytes = new Uint8Array(buf);
+  let bin = '';
+  for(let i=0;i<bytes.length;i++) bin += String.fromCharCode(bytes[i]);
+  return btoa(bin);
+}
+function base64ToBuf(b64){
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
+}
+
+async function deriveKey(password, salt){
+  const enc = new TextEncoder();
+  const baseKey = await crypto.subtle.importKey(
+    'raw', enc.encode(password), 'PBKDF2', false, ['deriveKey']
+  );
+  return crypto.subtle.deriveKey(
+    { name: 'PBKDF2', salt: salt, iterations: 200000, hash: 'SHA-256' },
+    baseKey,
+    { name: 'AES-GCM', length: 256 },
+    false,
+    ['encrypt', 'decrypt']
+  );
+}
+
+async function encryptText(text, password){
+  const salt = crypto.getRandomValues(new Uint8Array(16));
+  const iv = crypto.getRandomValues(new Uint8Array(12));
+  const key = await deriveKey(password, salt);
+  const enc = new TextEncoder();
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, enc.encode(text));
+
+  const combined = new Uint8Array(salt.length + iv.length + ciphertext.byteLength);
+  combined.set(salt, 0);
+  combined.set(iv, salt.length);
+  combined.set(new Uint8Array(ciphertext), salt.length + iv.length);
+
+  return bufToBase64(combined.buffer);
+}
+
+async function decryptText(b64, password){
+  const combined = new Uint8Array(base64ToBuf(b64));
+  const salt = combined.slice(0, 16);
+  const iv = combined.slice(16, 28);
+  const ciphertext = combined.slice(28);
+  const key = await deriveKey(password, salt);
+  const plainBuf = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  return new TextDecoder().decode(plainBuf);
+}
+
+async function encryptTwice(text, password){
+  const once = await encryptText(text, password);
+  const twice = await encryptText(once, password);
+  return twice;
+}
+
+async function decryptTwice(b64, password){
+  const once = await decryptText(b64, password);
+  const original = await decryptText(once, password);
+  return original;
+}
+
+async function run(){
+  const text = document.getElementById('input-text').value;
+  const password = document.getElementById('password').value;
+  const resultBox = document.getElementById('result');
+  const output = document.getElementById('output');
+  const note = document.getElementById('note');
+  note.classList.remove('error');
+
+  if(!text.trim()){
+    resultBox.classList.add('show');
+    outputRealText = '';
+    renderOutput();
+    note.textContent = 'Bitte gib zuerst einen Text ein.';
+    note.classList.add('error');
+    return;
+  }
+  if(!password){
+    resultBox.classList.add('show');
+    outputRealText = '';
+    renderOutput();
+    note.textContent = 'Bitte gib ein Passwort ein.';
+    note.classList.add('error');
+    return;
+  }
+
+  try{
+    if(mode === 'enc'){
+      const result = await encryptText(text, password);
+      outputRealText = result;
+      note.textContent = 'Fertig. Merke dir dein Passwort, du brauchst es zum Entschlüsseln.';
+    } else {
+      const result = await decryptText(text.trim(), password);
+      outputRealText = result;
+      note.textContent = 'Entschlüsselung erfolgreich.';
+    }
+    renderOutput();
+    resultBox.classList.add('show');
+  } catch(err){
+    resultBox.classList.add('show');
+    outputRealText = '';
+    renderOutput();
+    note.textContent = 'Entschlüsselung fehlgeschlagen — falsches Passwort oder beschädigter Text.';
+    note.classList.add('error');
+  }
+}
+
+</script>
+</body>
+</html>
